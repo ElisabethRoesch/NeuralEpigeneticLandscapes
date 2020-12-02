@@ -1,6 +1,6 @@
 using Plots, Statistics
-using Flux, DiffEqFlux, StochasticDiffEq, DiffEqBase.EnsembleAnalysis
-
+using Flux, DiffEqFlux
+using StochasticDiffEq, DiffEqBase.EnsembleAnalysis
 
 # dudt(u, p, t) = model(u)
 # g(u, p, t) = model2(u)
@@ -30,19 +30,23 @@ prob_truesde = SDEProblem(trueSDEfunc, true_noise_func, u0, tspan)
 
 # Take a typical sample from the mean
 ensemble_prob = EnsembleProblem(prob_truesde)
-ensemble_sol = solve(ensemble_prob, SOSRI(), trajectories = 10000)
+### FAILS HERE #### added ", num_monte = 10"
+ensemble_sol = solve(ensemble_prob, SOSRI(), trajectories = 10, num_monte = 10)
 ensemble_sum = EnsembleSummary(ensemble_sol)
 
-sde_data, sde_data_vars = Array.(timeseries_point_meanvar(ensemble_sol, tsteps))
+### FAILS HERE #### modified to [1] and [2] added ".u"
+sde_data_var = timeseries_point_meanvar(ensemble_sol, tsteps)
+sde_data, sde_data_vars = Array.(sde_data_var[1].u), Array.(sde_data_var[2].u)
+aa=timeseries_point_meanvar(ensemble_sol, tsteps)
 
-
-drift_dudt = FastChain((x, p) -> x.^3,
-                       FastDense(2, 50, tanh),
-                       FastDense(50, 2))
-diffusion_dudt = FastChain(FastDense(2, 2))
+drift_dudt = Chain((x, p) -> x.^3,
+                       Dense(2, 50, tanh),
+                       Dense(50, 2))
+diffusion_dudt = Chain(Dense(2, 2))
 
 neuralsde = NeuralDSDE(drift_dudt, diffusion_dudt, tspan, SOSRI(),
                        saveat = tsteps, reltol = 1e-1, abstol = 1e-1)
+
 
                        # Get the prediction using the correct initial condition
 prediction0 = neuralsde(u0)
