@@ -15,7 +15,7 @@ function dudt(states, ps, t)
     return [du, dv]
 end
 # test setting
-u0=[3., 2.9]
+u0 = [3., 2.9]
 ps = [100., 2, 100., 2] # from Supplementary material (BMC Syst Biol 2016 Leon)
 tspan = (0.0, 100.0)
 
@@ -80,7 +80,3 @@ savefig("figures/ts_bistable_U_on.pdf")
 plot(as[10,5][1,:], xlabel = "Time", ylabel ="Species", label = "U", title = "V is \"ON\" (IC: U=4, V=9).")
     plot!(as[10,5][2,:], label = "V")
 savefig("figures/ts_bistable_V_on.pdf")
-
-
-
-# ich glaube 1d ana macht mehr sind da immer eins an udn eins aus
