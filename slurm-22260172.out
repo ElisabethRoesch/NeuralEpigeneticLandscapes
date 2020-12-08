@@ -1,0 +1,7 @@
+/var/spool/slurm/job22260172/slurm_script: line 13: 43475 Killed                  julia test_diffeqflux_neuralsde_example.jl
+slurmstepd: error: Detected 1 oom-kill event(s) in step 22260172.batch cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
+Dec  5 19:01:24 spartan-bm059 kernel: Task in /slurm/uid_12465/job_22260172/step_batch killed as a result of limit of /slurm/uid_12465/job_22260172/step_batch
+Dec  5 19:01:24 spartan-bm059 kernel: memory: usage 12288000kB, limit 12288000kB, failcnt 35654
+Dec  5 19:01:24 spartan-bm059 kernel: memory+swap: usage 12288000kB, limit 12288000kB, failcnt 0
+Dec  5 19:01:24 spartan-bm059 kernel: kmem: usage 0kB, limit 9007199254740988kB, failcnt 0
+Dec  5 19:01:24 spartan-bm059 kernel: Memory cgroup stats for /slurm/uid_12465/job_22260172/step_batch: cache:6792KB rss:12281208KB rss_huge:305152KB mapped_file:5452KB swap:0KB inactive_anon:868532KB active_anon:11419148KB inactive_file:204KB active_file:116KB unevictable:0KB
