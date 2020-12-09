@@ -47,8 +47,6 @@ ensemble_nsol = solve(ensemble_nprob, SOSRI(), trajectories = 100,
                       saveat = tsteps)
 ensemble_nsum = EnsembleSummary(ensemble_nsol)
 
-plt1 = plot(ensemble_nsum, title = "Neural SDE: Before Training")
-scatter!(plt1, tsteps, sde_data', lw = 3)
 
 # scatter(tsteps, sde_data[1,:], label = "data")
 # scatter!(tsteps, prediction0[1,:], label = "prediction")
@@ -100,43 +98,46 @@ end
 
 opt = ADAM(0.025)
 
-# First round of training with n = 10
-result1 = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 10),
+result = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 2),
                                  neuralsde.p, opt,
-                                 cb = callback, maxiters = 100)
+                                 cb = callback, maxiters = 10)
 BSON.@save "models/test_diffeqflux_neuralsde_example/drift_dudt1.bson" drift_dudt
 BSON.@save "models/test_diffeqflux_neuralsde_example/diffusion_dudt1.bson" diffusion_dudt
+
+# samples1 = [predict_neuralsde(result1.minimizer) for i in 1:1000]
+# means1 = reshape(mean.([[samples1[i][j] for i in 1:length(samples1)]
+#                                       for j in 1:length(samples1[1])]),
+#                     size(samples1[1])...)
+# vars1 = reshape(var.([[samples1[i][j] for i in 1:length(samples1)]
+#                                     for j in 1:length(samples1[1])]),
+#                     size(samples1[1])...)
+# plt1 = plot(ensemble_nsum, title = "Neural SDE: Before Training")
+# scatter!(plt1, tsteps, sde_data', lw = 3)
+# plt2 = scatter(tsteps, sde_data', yerror = sde_data_vars',
+#                label = "", title = "Neural SDE: After Training",
+#                xlabel = "Time")
+# plot!(plt2, tsteps, means1', lw = 8, ribbon = vars1', label = "")
+# plt = plot(plt1, plt2, layout = (2, 1))
+# savefig(plt, "figures/test_diffeqflux_neuralsde_example/NN_sde_combined1.pdf")
+
+
+
 # this takes long, careful
-result2 = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 100),
-                                  result1.minimizer, opt,
-                                  cb = callback, maxiters = 100)
-BSON.@save "models/test_diffeqflux_neuralsde_example/drift_dudt2.bson" drift_dudt
-BSON.@save "models/test_diffeqflux_neuralsde_example/diffusion_dudt2.bson" diffusion_dudt
-samples1 = [predict_neuralsde(result1.minimizer) for i in 1:1000]
-means1 = reshape(mean.([[samples1[i][j] for i in 1:length(samples1)]
-                                      for j in 1:length(samples1[1])]),
-                    size(samples1[1])...)
-vars1 = reshape(var.([[samples1[i][j] for i in 1:length(samples1)]
-                                    for j in 1:length(samples1[1])]),
-                    size(samples1[1])...)
-plt2 = scatter(tsteps, sde_data', yerror = sde_data_vars',
-               label = "", title = "Neural SDE: After Training",
-               xlabel = "Time")
-plot!(plt2, tsteps, means1', lw = 8, ribbon = vars1', label = "")
-
-samples2 = [predict_neuralsde(result2.minimizer) for i in 1:1000]
-means2 = reshape(mean.([[samples2[i][j] for i in 1:length(samples2)]
-                                      for j in 1:length(samples2[1])]),
-                    size(samples2[1])...)
-vars2 = reshape(var.([[samples2[i][j] for i in 1:length(samples2)]
-                                    for j in 1:length(samples2[1])]),
-                    size(samples2[1])...)
-plt3 = scatter(tsteps, sde_data', yerror = sde_data_vars',
-               label = "", title = "Neural SDE: After Training",
-               xlabel = "Time")
-plot!(plt3, tsteps, means2', lw = 8, ribbon = vars2', label = "")
-
-plt = plot(plt1, plt2, layout = (2, 1))
-savefig(plt, "figures/test_diffeqflux_neuralsde_example/NN_sde_combined1.pdf")
-plt = plot(plt1, plt3, layout = (2, 1))
-savefig(plt, "figures/test_diffeqflux_neuralsde_example/NN_sde_combined2.pdf")
+# result2 = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 100),
+#                                   result1.minimizer, opt,
+#                                   cb = callback, maxiters = 100)
+# BSON.@save "models/test_diffeqflux_neuralsde_example/drift_dudt2.bson" drift_dudt
+# BSON.@save "models/test_diffeqflux_neuralsde_example/diffusion_dudt2.bson" diffusion_dudt
+# samples2 = [predict_neuralsde(result2.minimizer) for i in 1:1000]
+# means2 = reshape(mean.([[samples2[i][j] for i in 1:length(samples2)]
+#                                       for j in 1:length(samples2[1])]),
+#                     size(samples2[1])...)
+# vars2 = reshape(var.([[samples2[i][j] for i in 1:length(samples2)]
+#                                     for j in 1:length(samples2[1])]),
+#                     size(samples2[1])...)
+# plt3 = scatter(tsteps, sde_data', yerror = sde_data_vars',
+#                label = "", title = "Neural SDE: After Training",
+#                xlabel = "Time")
+# plot!(plt3, tsteps, means2', lw = 8, ribbon = vars2', label = "")
+# plt = plot(plt1, plt3, layout = (2, 1))
+# savefig(plt, "figures/test_diffeqflux_neuralsde_example/NN_sde_combined2.pdf")

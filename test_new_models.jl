@@ -28,8 +28,8 @@ ensemble_sum = EnsembleSummary(ensemble_sol)
 sde_data, sde_data_vars = Array.(timeseries_point_meanvar(ensemble_sol, tsteps))
 
 
-@load "models/test_diffeqflux_neuralsde_example/diffusion_dudt1.bson" diffusion_dudt
-@load "models/test_diffeqflux_neuralsde_example/drift_dudt1.bson" drift_dudt
+@load "models/test_diffeqflux_neuralsde_example/diffusion_dudt2.bson" diffusion_dudt
+@load "models/test_diffeqflux_neuralsde_example/drift_dudt2.bson" drift_dudt
 
 
 neuralsde = NeuralDSDE(drift_dudt, diffusion_dudt, tspan, SOSRI(),
@@ -38,3 +38,15 @@ neuralsde = NeuralDSDE(drift_dudt, diffusion_dudt, tspan, SOSRI(),
 
  # Get the prediction using the correct initial condition
 prediction0 = neuralsde(u0)
+drift_(u, p, t) = drift_dudt(u, p[1:neuralsde.len])
+diffusion_(u, p, t) = diffusion_dudt(u, p[(neuralsde.len+1):end])
+
+prob_neuralsde = SDEProblem(drift_, diffusion_, u0,(0.0f0, 1.2f0), neuralsde.p)
+
+ensemble_nprob = EnsembleProblem(prob_neuralsde)
+ensemble_nsol = solve(ensemble_nprob, SOSRI(), trajectories = 100,
+                      saveat = tsteps)
+ensemble_nsum = EnsembleSummary(ensemble_nsol)
+
+plt1 = plot(ensemble_nsum, title = "Neural SDE: After Training")
+scatter!(plt1, tsteps, sde_data', lw = 3)
