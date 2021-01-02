@@ -1,6 +1,6 @@
 
 push!(LOAD_PATH, "/Users/eroesch/github")
-using vfa, GR
+using vfa #, GR
 using  DifferentialEquations
 using Plots, Optim, Dates, DiffEqParamEstim, Flux, DiffEqFlux, Statistics, LinearAlgebra, OrdinaryDiffEq
 using BSON: @save, @load
@@ -40,7 +40,7 @@ dudt = Chain(Dense(1,15,tanh),
        Dense(15,15,tanh),
        Dense(15,1))
 ps = Flux.params(dudt)
-n_ode = x->neural_ode(dudt, x, tspan, Tsit5(), saveat=t, reltol=1e-7, abstol=1e-9)
+n_ode = NeuralODE(dudt, tspan, Tsit5(), saveat=t, reltol=1e-7, abstol=1e-9)
 n_epochs = 200
 data1 = Iterators.repeated((), n_epochs)
 #opt1 = ADAM(0.0001)
@@ -64,6 +64,7 @@ end
 test_u0s = [-3.,-2.5,-2.,-1.5,-1.,-0.5,0.,0.5,1.,1.5,2.,2.5,-3.]
 preds = []
 for i in test_u0s
+    pred = Flux.data(n_ode([i]))
     pred = Flux.data(n_ode([i]))
     push!(preds, pred[1,:])
 end
