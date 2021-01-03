@@ -1,4 +1,4 @@
-
+# old name: fix_alpha_2
 push!(LOAD_PATH, "/Users/eroesch/github")
 using vfa #, GR
 using  DifferentialEquations
@@ -40,7 +40,7 @@ dudt = Chain(Dense(1,15,tanh),
        Dense(15,15,tanh),
        Dense(15,1))
 ps = Flux.params(dudt)
-n_ode = NeuralODE(dudt, tspan, Tsit5(), saveat=t, reltol=1e-7, abstol=1e-9)
+n_ode = NeuralODE(dudt, tspan, Tsit5(), saveat=t)
 n_epochs = 200
 data1 = Iterators.repeated((), n_epochs)
 #opt1 = ADAM(0.0001)
@@ -58,14 +58,15 @@ function L2_loss_fct()
 end
 
 cb1 = function ()
-    println(Tracker.data(L2_loss_fct()))
+    # println(Tracker.data(L2_loss_fct()))
+    println("Ja")
 
 end
 test_u0s = [-3.,-2.5,-2.,-1.5,-1.,-0.5,0.,0.5,1.,1.5,2.,2.5,-3.]
 preds = []
 for i in test_u0s
-    pred = Flux.data(n_ode([i]))
-    pred = Flux.data(n_ode([i]))
+    pred = n_ode([i])
+    pred = n_ode([i])
     push!(preds, pred[1,:])
 end
 
@@ -89,7 +90,7 @@ plot!(Array(range(1,stop = datasize)),preds[13])
 derivs = []
 for i in test_u0s
     d = dudt([i])
-    push!(derivs,Flux.data(d)[1])
+    push!(derivs,d[1])
 end
 a = test_u0s.+ derivs
 plot([1,2],[test_u0s[1], a[1]],label ="", color ="blue", grid =:off)
