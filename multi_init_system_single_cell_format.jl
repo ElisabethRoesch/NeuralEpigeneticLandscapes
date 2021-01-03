@@ -5,7 +5,7 @@
 # using Plots, Optim, Dates, DiffEqParamEstim, Flux, StatsBase, DiffEqFlux, Statistics, LinearAlgebra, OrdinaryDiffEq
 # using BSON: @save, @load
 # using Zygote: @ignore
-using Distances, KernelDensity, DiffEqFlux
+using Distances, KernelDensity, DifferentialEquations, DiffEqFlux, Plots, Flux
 datasize = 35
 
 alpha, tspan, solver = 5.0, (0, 20.0), Tsit5()
@@ -20,8 +20,11 @@ function run_pfsuper_one_u0(u0)
     min_val = min(obs...)
     max_val = max(obs...)
     div = 5
-    pdf_100 = pdf(kde(obs[1, :], bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
-    return pdf_100
+    # pdf_100 = pdf(kde(obs[1, :], bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
+
+    kdx_1_N200 = kde(obs[1, :], bandwidth = 0.05)
+    potential = -log.(pdf(kdx_1_N200,-10.0:0.01:10.0).+1)
+    return potential
 end
 function run_pfsuper_multi_u0(u0s)
     obs =[]
@@ -31,13 +34,13 @@ function run_pfsuper_multi_u0(u0s)
     obs
 end
 
-train_u0s = [-5., -1., 0., 1.0, 5.0]
+train_u0s = [-3., -1., 0., 1.0, 3.0]
 ode_data = run_pfsuper_multi_u0(train_u0s)
-plot(ode_data[1], range(1, step = 1, stop = 100), label = "", grid = "off")
-    plot!(ode_data[2], range(1, step = 1, stop = 100), label = "")
-    plot!(ode_data[3], range(1, step = 1, stop = 100), label = "")
-    plot!(ode_data[4], range(1, step = 1, stop = 100), label = "")
-    plot!(ode_data[5], range(1, step = 1, stop = 100), label = "")
+plot(ode_data[1], range(1, step = 1, stop = 2001), grid = "off", ylim = (-250,1250), legend = :topleft)
+plot!(ode_data[2], range(1, step = 1, stop = 2001))
+plot!(ode_data[3], range(1, step = 1, stop = 2001))
+plot!(ode_data[4], range(1, step = 1, stop = 2001))
+plot!(ode_data[5], range(1, step = 1, stop = 2001))
 
 
 
@@ -68,14 +71,20 @@ function loss_fct()
         min_val = min(d_2...)
         max_val = max(d_2...)
         div = 5
-        pdf_100 = pdf(kde(d_2, bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
-
-        t_1 = typeof(d_1)
-        t_2 = typeof(d_2)
+        # pdf_100 = pdf(kde(d_2, bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
+        kdx_1_N200 = kde(d_2, bandwidth = 0.05)
+        println("len: ", length(kdx_1_N200.x))
+        println("x min: ", min(kdx_1_N200.x...))
+        println("x max: ", max(kdx_1_N200.density...))
+        println("p min: ", min(kdx_1_N200.density...))
+        println("p max: ", max(kdx_1_N200.density...))
+        potential = -log.(pdf(kdx_1_N200,-10.0:0.01:10.0).+1)
+        # t_1 = typeof(d_1)
+        # t_2 = typeof(d_2)
 
         # print(t_1, " and ", t_2, " \n \n")
         # s = kolmogorov_smirnov_distance(d_1, d_2)
-        s = euclidean(d_1, pdf_100)
+        s = euclidean(d_1, potential)
 
         sum = sum + s
     end
