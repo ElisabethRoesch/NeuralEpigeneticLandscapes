@@ -1,15 +1,9 @@
-# old name: fix_alpha_2
-# push!(LOAD_PATH, "/Users/eroesch/github")
-# using vfa #, GR
-# using  DifferentialEquations
-# using Plots, Optim, Dates, DiffEqParamEstim, Flux, StatsBase, DiffEqFlux, Statistics, LinearAlgebra, OrdinaryDiffEq
-# using BSON: @save, @load
-# using Zygote: @ignore
 using Distances, KernelDensity, DifferentialEquations, DiffEqFlux, Plots, Flux
+using Zygote: @ignore
 datasize = 35
-
 alpha, tspan, solver = 5.0, (0, 20.0), Tsit5()
 t = range(tspan[1], tspan[2], length = datasize)
+
 function run_pfsuper_one_u0(u0)
     x0 = [u0]
     function pfsuper(dx, x, p, t)
@@ -21,11 +15,10 @@ function run_pfsuper_one_u0(u0)
     max_val = max(obs...)
     div = 5
     # pdf_100 = pdf(kde(obs[1, :], bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
-
-    kdx_1_N200 = kde(obs[1, :], bandwidth = 0.05)
-    potential = -log.(pdf(kdx_1_N200,-10.0:0.01:10.0).+1)
-    return potential
+    kdx_1_N200 = kde(obs[1, :], bandwidth = 0.05, boundary = (-5,5)).density
+    return kdx_1_N200
 end
+
 function run_pfsuper_multi_u0(u0s)
     obs =[]
     for i in u0s
@@ -36,68 +29,58 @@ end
 
 train_u0s = [-3., -1., 0., 1.0, 3.0]
 ode_data = run_pfsuper_multi_u0(train_u0s)
-plot(ode_data[1], range(1, step = 1, stop = 2001), grid = "off", ylim = (-250,1250), legend = :topleft)
-plot!(ode_data[2], range(1, step = 1, stop = 2001))
-plot!(ode_data[3], range(1, step = 1, stop = 2001))
-plot!(ode_data[4], range(1, step = 1, stop = 2001))
-plot!(ode_data[5], range(1, step = 1, stop = 2001))
+plot(ode_data[1], range(1, step = 1, stop = 2048), grid = "off", ylim = (-250, 2250), legend = :topleft)
+plot!(ode_data[2], range(1, step = 1, stop = 2048))
+plot!(ode_data[3], range(1, step = 1, stop = 2048))
+plot!(ode_data[4], range(1, step = 1, stop = 2048))
+plot!(ode_data[5], range(1, step = 1, stop = 2048))
 
-
-
-
-
-
-dudt = Chain(Dense(1,15,tanh),
-       Dense(15,15,tanh),
-       Dense(15,1))
-
-ps = Flux.params(dudt)
+dudt = FastChain((x, p) -> x.^3,
+                  FastDense(1, 50, tanh),
+                  FastDense(50, 1))
 n_ode = NeuralODE(dudt, tspan, Tsit5(), saveat = t)
 n_epochs = 200
 data1 = Iterators.repeated((), n_epochs)
 #opt1 = ADAM(0.0001)
 opt1 = Descent(0.005)
 #L2_loss_fct() = sum(abs2,ode_data .- n_ode(u0))+sum(abs2,ode_data2 .- n_ode(u02))
+function predict_neuralode(u0, p)
+  return n_ode(u0, p)
+end
 
-function loss_fct()
+function loss_fct(p)
     sum = 0.0
     counter = 0
     for i in train_u0s
         counter = counter+1
         d_1 = ode_data[counter[1]]
-        # d_2 = reshape(n_ode([i]), length(n_ode([i])))
-        temp_pred = n_ode([i])
+        temp_pred = predict_neuralode([i], p)
         d_2 = reshape(hcat(temp_pred.u...), length(temp_pred))
-        min_val = min(d_2...)
-        max_val = max(d_2...)
+        # min_val = min(d_2...)
+        # max_val = max(d_2...)
         div = 5
         # pdf_100 = pdf(kde(d_2, bandwidth = 0.05), range(min_val - div, stop = max_val + div, length = 100))
-        kdx_1_N200 = kde(d_2, bandwidth = 0.05)
-        println("len: ", length(kdx_1_N200.x))
-        println("x min: ", min(kdx_1_N200.x...))
-        println("x max: ", max(kdx_1_N200.density...))
-        println("p min: ", min(kdx_1_N200.density...))
-        println("p max: ", max(kdx_1_N200.density...))
-        potential = -log.(pdf(kdx_1_N200,-10.0:0.01:10.0).+1)
-        # t_1 = typeof(d_1)
-        # t_2 = typeof(d_2)
-
-        # print(t_1, " and ", t_2, " \n \n")
-        # s = kolmogorov_smirnov_distance(d_1, d_2)
-        s = euclidean(d_1, potential)
-
+        d_2_copy = deepcopy(d_2)
+        kdx_1_N200 = kde(d_2_copy, bandwidth = 0.05, boundary = (-5,5)).density
+        println("d1: ", typeof(d_1))
+        println("kde density: ", typeof(kdx_1_N200))
+        # println("len: ", length(kdx_1_N200.x))
+        # println("x min: ", min(kdx_1_N200.x...))
+        # println("x max: ", max(kdx_1_N200.density...))
+        # println("p min: ", min(kdx_1_N200.density...))
+        # println("p max: ", max(kdx_1_N200.density...))
+        # potential = -log.(pdf(kdx_1_N200, -10.0:0.01:10.0).+1)
+        s = euclidean(d_1, kdx_1_N200)
         sum = sum + s
     end
     return sum
 end
-loss_fct()
-cb1 = function ()
-    println("Loss: ", loss_fct(), ("\n"))
+loss_fct(n_ode.p)
+cb1 = function (p, l, pred)
+    println("Loss: ", l, ("\n"))
 end
 
-# train n_ode with collocation method
-@time Flux.train!(loss_fct, ps, data1, opt1, cb = cb1)
-
+@time result = DiffEqFlux.sciml_train(loss_fct, n_ode.p, opt1, cb = cb1, maxiters = 10)
 
 test_u0s = [-3.,-2.5,-2.,-1.5,-1.,-0.5,0.,0.5,1.,1.5,2.,2.5,-3.]
 preds = []
@@ -162,3 +145,11 @@ function kolmogorov_smirnov_distance(data1, data2)
             dist = maximum(abs.(ecdf_vals_1-ecdf_vals_2))
             return dist
 end
+
+
+
+
+kde([1,1,2,3,4,5,5.])
+
+
+kde([1,1,2,3,4,5,5.], boundary = (1,5.))
