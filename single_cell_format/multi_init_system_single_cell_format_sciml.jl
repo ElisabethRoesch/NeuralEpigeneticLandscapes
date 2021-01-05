@@ -3,7 +3,9 @@ using Zygote: @ignore
 datasize = 35
 alpha, tspan, solver = 5.0, (0, 20.0), Tsit5()
 t = range(tspan[1], tspan[2], length = datasize)
-
+mutable struct saver
+    arr::Array{Float64,1}
+end
 function run_pfsuper_one_u0(u0)
     x0 = [u0]
     function pfsuper(dx, x, p, t)
@@ -26,7 +28,7 @@ function run_pfsuper_multi_u0(u0s)
     end
     obs
 end
-
+saver_el = saver([])
 train_u0s = [-3., -1., 0., 1.0, 3.0]
 ode_data = run_pfsuper_multi_u0(train_u0s)
 plot(ode_data[1], range(1, step = 1, stop = 2048), grid = "off", ylim = (-250, 2250), legend = :topleft)
