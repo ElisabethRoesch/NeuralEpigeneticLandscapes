@@ -1,6 +1,6 @@
 using DiffEqFlux, StochasticDiffEq, Flux, Optim, Plots, DiffEqBase.EnsembleAnalysis, Statistics
 
-u0 = Float32[2.0]
+u0s = [[2.0],...]
 datasize = 30
 tspan = (0.0f0, 1.5f0)
 tsteps = range(tspan[1], tspan[2], length = datasize)
@@ -34,15 +34,27 @@ function predict_neuralsde(p)
 end
 
 function loss_neuralsde(p; n = 100)
-  samples = [predict_neuralsde(p) for i in 1:n]
-  means = reshape(mean.([[samples[i][j] for i in 1:length(samples)]
+    loss = 0.0
+    counter = 0
+    for u0 in u0s
+        samples = [Array(neuralsde(u0, p)) for i in 1:n]
+        means = reshape(mean.([[samples[i][j] for i in 1:length(samples)]
+                                                for j in 1:length(samples[1])]),
+                              size(samples[1])...)
+        vars = reshape(var.([[samples[i][j] for i in 1:length(samples)]
+                                              for j in 1:length(samples[1])]),
+                              size(samples[1])...)
+        s = sum(abs2, sde_data[counter] - means) + sum(abs2, sde_data_vars[counter] - vars)
+        loss = loss + s
+    end
+
+  return loss,
+        reshape(mean.([[samples[i][j] for i in 1:length(samples)]
+                                          for j in 1:length(samples[1])]),
+                        size(samples[1])...),
+        reshape(var.([[samples[i][j] for i in 1:length(samples)]
                                         for j in 1:length(samples[1])]),
-                      size(samples[1])...)
-  vars = reshape(var.([[samples[i][j] for i in 1:length(samples)]
-                                      for j in 1:length(samples[1])]),
-                      size(samples[1])...)
-  loss = sum(abs2, sde_data - means) + sum(abs2, sde_data_vars - vars)
-  return loss, means, vars
+                                              size(samples[1])...)
 end
 
 iter = 0

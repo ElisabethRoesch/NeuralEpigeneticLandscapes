@@ -3,7 +3,7 @@ using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots
 u0s = [[-3.],[ -1.], [0.], [1.0], [3.0]]
 alpha_bifur = 5.
 datasize = 30
-tspan = (0.0f0, 15f0)
+tspan = (0.0f0, 1.5f0)
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
 function run_pfsuper_one_u0(u0)
@@ -27,15 +27,11 @@ end
 
 ode_data = run_pfsuper_multi_u0(u0s)
 
-dudt2 = FastChain(FastDense(1, 50, tanh)),
-                  FastDense(1, 50, tanh),
+dudt2 = FastChain(FastDense(1, 50, tanh),
+                  FastDense(50, 50, tanh),
                   FastDense(50, 1))
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 
-function test()
-    a = "slurm-22260172."
-    return a, "he", ["s","s"]
-end
 
 function loss_neuralode(p)
     loss = 0.
@@ -77,7 +73,7 @@ end
 
 result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, prob_neuralode.p,
                                           ADAM(0.05), cb = callback,
-                                          maxiters = 300)
+                                          maxiters = 500)
 
 result_neuralode2 = DiffEqFlux.sciml_train(loss_neuralode,
                                            result_neuralode.minimizer,
