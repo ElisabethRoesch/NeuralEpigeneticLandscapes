@@ -1,5 +1,5 @@
 using DiffEqFlux, StochasticDiffEq, Flux, Optim, Plots, DiffEqBase.EnsembleAnalysis, Statistics
-
+# error bars of observed data are missing on plot. Maybe because not using StatsPlots?
 u0 = Float32[2.0]
 datasize = 30
 tspan = (0.0f0, 1.5f0)

@@ -98,3 +98,22 @@ opt = ADAM(0.025)
 result = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 10),
                                  neuralsde.p, opt,
                                  cb = callback, maxiters = 200)
+
+
+
+
+function plot_sdes(p = neuralsde.p, n = 100)
+    plt = plot()
+    for i in 1:length(u0s)
+         u0 = u0s[i]
+        scatter!(tsteps, sde_datae[i][1,:], yerror = sde_datae_vars[i][1,:], label = "data", color = "blue")
+        samples_temp = [Array(neuralsde(u0, p)) for i in 1:n]
+        means_temp = reshape(mean.([[samples_temp[i][j] for i in 1:length(samples_temp)] for j in 1:length(samples_temp[1])]), size(samples_temp[1])...)
+        vars_temp = reshape(var.([[samples_temp[i][j] for i in 1:length(samples_temp)] for j in 1:length(samples_temp[1])]), size(samples_temp[1])...)
+        plot!(plt, tsteps, means_temp[1,:], ribbon = vars_temp[1,:], label = "prediction", color = "red")
+    end
+    return plt
+end
+
+
+plt = plot_sdes()
