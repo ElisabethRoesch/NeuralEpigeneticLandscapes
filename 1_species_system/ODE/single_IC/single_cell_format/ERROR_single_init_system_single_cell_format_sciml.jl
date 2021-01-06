@@ -30,7 +30,6 @@ end
 
 callback = function (p, l, pred; doplot = true)
   display(l)
-  # plot current prediction against data
   plt = scatter(tsteps, ode_data[1,:], label = "data")
   scatter!(plt, tsteps, pred[1,:], label = "prediction")
   if doplot
