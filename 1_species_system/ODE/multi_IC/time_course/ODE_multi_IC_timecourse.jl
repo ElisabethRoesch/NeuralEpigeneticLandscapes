@@ -3,7 +3,7 @@ using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots
 u0s = [[-3.],[ -1.], [0.], [1.0], [3.0]]
 alpha_bifur = 5.
 datasize = 30
-tspan = (0.0f0, 1.5f0)
+tspan = (0.0f0, 15f0)
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
 function run_pfsuper_one_u0(u0)
@@ -27,7 +27,7 @@ end
 
 ode_data = run_pfsuper_multi_u0(u0s)
 
-dudt2 = FastChain((x, p) -> x.^3,
+dudt2 = FastChain(FastDense(1, 50, tanh)),
                   FastDense(1, 50, tanh),
                   FastDense(50, 1))
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
@@ -90,75 +90,20 @@ result_neuralode2 = DiffEqFlux.sciml_train(loss_neuralode,
 
 
 
-# not sure whats happening. 
-test_u0s = [-3.,-2.5,-2.,-1.5,-1.,-0.5,0.,0.5,1.,1.5,2.,2.5,-3.]
-preds = []
-for i in test_u0s
-    pred = prob_neuralode([i])
-    push!(preds, pred[1,:])
+# not sure whats happening.
+test_u0s = [[-3.],[-2.5],[-2.],[-1.5],[-1.],[-0.5],[0.],[0.5],[1.],[1.5],[2.],[2.5],[-3.]]
+ode_data_tests = run_pfsuper_multi_u0(test_u0s)
+preds_tests = []
+for u0 in test_u0s
+    preds_test = prob_neuralode(u0, result_neuralode2.minimizer)
+    push!(preds_tests, preds_test)
 end
-plot(Array(range(1,stop = datasize)),preds[1])
-    plot!(Array(range(1,stop = datasize)),preds[2])
-    plot!(Array(range(1,stop = datasize)),preds[3])
-    plot!(Array(range(1,stop = datasize)),preds[4])
-    plot!(Array(range(1,stop = datasize)),preds[5])
-    plot!(Array(range(1,stop = datasize)),preds[6])
-    plot!(Array(range(1,stop = datasize)),preds[7])
-    plot!(Array(range(1,stop = datasize)),preds[8])
-    plot!(Array(range(1,stop = datasize)),preds[9])
-    plot!(Array(range(1,stop = datasize)),preds[10])
-    plot!(Array(range(1,stop = datasize)),preds[11])
-    plot!(Array(range(1,stop = datasize)),preds[12])
-    plot!(Array(range(1,stop = datasize)),preds[13])
-
-derivs = []
-for i in test_u0s
-    d = dudt2([i],  prob_neuralode.p)
-    push!(derivs,d[1])
+function plot_test()
+    plt = plot(grid = "off")
+    for i in 1:length(test_u0s)
+        scatter!(tsteps, ode_data_tests[i][1,:], label = "data $i", color = "blue")
+        scatter!(tsteps, preds_tests[i][1,:], label = "prediction $i", color = "red")
+    end
+    display(plot(plt))
 end
-a = test_u0s.+ derivs
-plot([1,2],[test_u0s[1], a[1]], label = "", color = "blue", grid =:off)
-    plot!([1,2], [test_u0s[2], a[2]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[3], a[3]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[4], a[4]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[5], a[5]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[6], a[6]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[7], a[7]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[8], a[8]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[9], a[9]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[10], a[10]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[11], a[11]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[12], a[12]], label = "", color = "blue")
-    plot!([1,2], [test_u0s[13], a[13]], label = "", color = "blue")
-    hline!([-sqrt(alpha_bifur), 0, sqrt(alpha_bifur)], label = "",color = "red")
-savefig("alpha_bifur_ks_5.pdf")
-@save "pitchfork_bifur_alpha_bifur_ks_5.bson" dudt
-
-
-
-
-
-function kolmogorov_smirnov_distance(data1, data2)
-            ecdf_func_1 = StatsBase.ecdf(data1)
-            ecdf_func_2 = StatsBase.ecdf(data2)
-            max = maximum([data1;data2])
-            intervals = max/999
-            ecdf_vals_1 = Array{Float64,1}(undef, 1000)
-            for i in 1:1000
-                ecdf_vals_1[i] = ecdf_func_1(intervals*(i-1))
-            end
-            ecdf_vals_2 = Array{Float64,1}(undef, 1000)
-            for i in 1:1000
-                ecdf_vals_2[i] = ecdf_func_2(intervals*(i-1))
-            end
-            dist = maximum(abs.(ecdf_vals_1-ecdf_vals_2))
-            return dist
-end
-
-
-
-
-kde([1,1,2,3,4,5,5.])
-
-
-kde([1,1,2,3,4,5,5.], boundary = (1,5.))
+plot_test()

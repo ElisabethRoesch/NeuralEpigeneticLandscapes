@@ -13,7 +13,7 @@ end
 prob_trueode = ODEProblem(trueODEfunc, u0, tspan)
 ode_data = Array(solve(prob_trueode, Tsit5(), saveat = tsteps))
 
-dudt2 = FastChain((x, p) -> x.^3,
+dudt2 = FastChain(FastDense(1, 50, tanh)),
                   FastDense(1, 50, tanh),
                   FastDense(50, 1))
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
