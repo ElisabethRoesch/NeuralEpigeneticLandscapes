@@ -31,31 +31,33 @@ predict_neuralode(prob_neuralode.p)
 function loss_neuralode(p)
     pred = predict_neuralode(p)
     loss = sum(abs2, kde_data .- [count(x->lims[ind_lim]<=x<lims[ind_lim+1], pred[1,:]) for ind_lim in 1:length(lims)-1])
-    return loss, pred
+    return loss#, pred
 end
 
-callback = function (p, l, pred; doplot = true)
-    display(l)
-    plt = scatter(tsteps, ode_data[1,:], ylim = (min_lim, max_lim), label = "data")
-    scatter!(plt, tsteps, pred[1,:], label = "prediction")
-    if doplot
-        plt2 = plot(kde_data, Array(range(1, step = 1, stop = length(kde_data))), label = "data")
-        plot!([count(x->lims[ind_lim]<=x<lims[ind_lim+1], pred[1,:]) for ind_lim in 1:length(lims)-1], Array(range(1, step = 1, stop = length(kde_data))), label = "prediction")
-        display(plot(plt, plt2))
-    end
-    return false
-end
-
-result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, prob_neuralode.p,
-                                          ADAM(0.05), cb = callback,
-                                          maxiters = 30)
-
-
-
-
-
+# Check gradients
 using Zygote
 Zygote.gradient(loss_neuralode, prob_neuralode.p)
+
+#
+# callback = function (p, l, pred; doplot = true)
+#     display(l)
+#     plt = scatter(tsteps, ode_data[1,:], ylim = (min_lim, max_lim), label = "data")
+#     scatter!(plt, tsteps, pred[1,:], label = "prediction")
+#     if doplot
+#         plt2 = plot(kde_data, Array(range(1, step = 1, stop = length(kde_data))), label = "data")
+#         plot!([count(x->lims[ind_lim]<=x<lims[ind_lim+1], pred[1,:]) for ind_lim in 1:length(lims)-1], Array(range(1, step = 1, stop = length(kde_data))), label = "prediction")
+#         display(plot(plt, plt2))
+#     end
+#     return false
+# end
+#
+# result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, prob_neuralode.p,
+#                                           ADAM(0.05), cb = callback,
+#                                           maxiters = 30)
+
+
+
+
 
 
 result_neuralode2 = DiffEqFlux.sciml_train(loss_neuralode,
