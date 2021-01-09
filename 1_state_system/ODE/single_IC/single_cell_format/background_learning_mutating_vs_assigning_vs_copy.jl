@@ -1,4 +1,4 @@
-function mutate_a(a)
+function mutate_a(a) # as copy
     a_mut = Array{Float32,1}(undef, 3)
     @time a_mut .= a
     return a_mut
@@ -9,7 +9,7 @@ function copy_a(a)
     return a_copy
 end
 
-function assign_a(a)
+function assign_a(a) # copy pointers only.
     @time a_ass = a
     return a_ass
 end
