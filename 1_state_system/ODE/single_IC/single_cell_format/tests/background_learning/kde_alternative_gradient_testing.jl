@@ -53,10 +53,10 @@ end
 Zygote.gradient(tester_dict, pred)
 
 
-Array(range(1, step = 0.00001, stop = 4))
+Array(range(1, step = 1, stop = 4))
 # empty gradient
 function tester_for_directly_in_array(pred)
-    lims = Array(range(1, step = 0.01, stop = 4))
+    lims = Array(range(1, step = 1, stop = 4))
     a = [count(x -> lims[ind_lim] <= x < lims[ind_lim + 1], pred) for ind_lim in 1:length(lims) - 1]
     println(" ")
     println("pred: ", pred)
@@ -66,7 +66,7 @@ function tester_for_directly_in_array(pred)
     return loss
 end
 
-pred2 = Array(range(1,step =0.2, stop =3.5))
+pred2 = [1, 2, 4]
 gradient(tester_for_directly_in_array, pred)
 gradient(tester_for_directly_in_array, pred2)
 
@@ -75,12 +75,18 @@ dim = 10
 vals = Array{Float32,2}(undef,dim,dim)
 for i in 1:dim
     for j in 1:dim
-    vals[i,j] = tester_for_directly_in_array([1,j,i])
+    vals[i,j] = tester_for_directly_in_array([1, j, i])
     end
 end
 using Plots
 contourf(vals)
-# Zygote uses nothing as a kind of strong zero - but loss changes. Vllt weil stufen form?
+print(vals)
+plt = plot(vals[1,:])
+for i in 2:dim
+    plot!(vals[i,:])
+end
+plot(plt)
+# Zygote uses nothing as a kind of strong zero - but loss changes. Problem: steps in function!
 
 # empty gradient
 function test_time(pred)
@@ -89,7 +95,7 @@ function test_time(pred)
     println(" ")
     println("pred: ", pred)
     # println("a: ", a)
-    loss = sum(abs2, pred.-[1, 3, 4])
+    loss = sum(abs2, pred .- [1, 3, 4])
     println("loss: ", loss)
     return loss
 end
