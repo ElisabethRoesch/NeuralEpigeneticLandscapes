@@ -50,7 +50,8 @@ result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, prob_neuralode.p,
                                           ADAM(0.05), cb = callback,
                                           maxiters = 30)
 
-
+using Zygote
+Zygote.gradient(loss_neuralode, prob_neuralode.p)
 
 result_neuralode2 = DiffEqFlux.sciml_train(loss_neuralode,
                                            result_neuralode.minimizer,

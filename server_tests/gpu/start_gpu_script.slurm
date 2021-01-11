@@ -1,9 +1,10 @@
 #!/bin/bash
-#SBATCH --nodes=4
-#SBATCH --ntasks=16
+#SBATCH --partition gpgpu
+#SBATCH --account=punim0638
 #SBATCH --time=3-23:59:59
 #SBATCH --mail-user=eroesch@student.unimelb.edu.au
 #SBATCH --mail-type=ALL
+#SBATCH --gres=gpu:4
 # Note: SLURM defaults to running jobs in the directory
 
 # Load required modules
