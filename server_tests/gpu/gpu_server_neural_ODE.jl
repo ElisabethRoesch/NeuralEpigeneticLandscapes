@@ -49,6 +49,6 @@ callback = function (p, l, pred; doplot = false)
   end
   return false
 end
-@time result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, p,
+result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, p,
                                           ADAM(0.05), cb = callback,
                                           maxiters = 300)
