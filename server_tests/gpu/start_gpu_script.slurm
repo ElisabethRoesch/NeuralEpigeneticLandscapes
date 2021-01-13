@@ -5,7 +5,7 @@
 #SBATCH --mail-user=eroesch@student.unimelb.edu.au
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:4
-#SBACTH --qos=gpgpuresplat
+#SBATCH --qos=gpgpuresplat
 # Note: SLURM defaults to running jobs in the directory
 
 # Load required modules
