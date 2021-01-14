@@ -1,31 +1,37 @@
-using DifferentialEquations, ModelingToolkit, Plots
 
-@parameters t σ α
-@variables x(t) y(t) # x is the State Variable; y the differentiation factor (aka bifurcation parameter)
-@derivatives D' ~ t
+using DifferentialEquations, Plots, KernelDensity
 
-
-eqs = [ D(x) ~ y*x-x^3, D(y) ~ α]
-noiseeqs = [σ*x, σ*y] # add states (LISI)
-
-potential = SDESystem(eqs, noiseeqs, t, [x,y], [α,σ])
-
-initval = [x => -5.0,y => -5.0] # modify X start -5 (LISI)
-
-tspan = (0.0, 30.0);
-params = [α => 0.5, σ => 0.1]
-prob = SDEProblem(potential, initval, tspan, params, noise = WienerProcess(0.0, 0.0)); # modify noise to 2D
-
-sol = solve(prob)
-
-plot(sol, vars = (y, x), legend = :outerright)
-
-
-
-for i in 1:99
-    sol = solve(prob);
-    plot!(sol, vars = (y,x))
+function postprocessing(ensemble_sol, number_trajects, datasize)
+    end_indx = rand(1:datasize, number_trajects)
+    end_points = [ensemble_sol.u[i][:,end_indx[i]] for i in 1:number_trajects]
+    return end_points
 end
 
-sol = solve(prob);
-    plot!(sol, vars = (y,x), legend = :outerright)
+function get_sols(number_trajects)
+    u0 = Float32[0., -5.]
+    datasize = 30
+    tspan = (0.0, 30.0)
+    tsteps = range(tspan[1], tspan[2], length = datasize)
+    alpha  = 0.5
+    function trueSDEfunc(du, u, p, t)
+        du[1] = u[2]*u[1]-u[1]^3
+        du[2] = alpha
+        return du
+    end
+    mp = Float32[0.1, 0.1]
+    function true_noise_func(du, u, p, t)
+        du .= mp
+    end
+    prob_truesde = SDEProblem(trueSDEfunc, true_noise_func, u0, tspan)
+    ensemble_prob = EnsembleProblem(prob_truesde)
+    ensemble_sol = solve(ensemble_prob, SOSRI(), saveat = tsteps, trajectories = number_trajects)
+    ensemble_sum = EnsembleSummary(ensemble_sol)
+    pp = postprocessing(ensemble_sol, number_trajects, datasize)
+    return ensemble_sol, ensemble_sum, pp
+end
+
+
+a, b, c = get_sols(10000)
+cc = hcat(c...)'
+ccc = kde(cc).density
+contour(ccc)
