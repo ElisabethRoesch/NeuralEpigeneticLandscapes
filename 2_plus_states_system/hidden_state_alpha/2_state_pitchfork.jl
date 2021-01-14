@@ -20,7 +20,7 @@ function get_sols(number_trajects)
     end
     mp = Float32[0.1, 0.1]
     function true_noise_func(du, u, p, t)
-        du .= mp
+        du .= mp#*.u this is for multiplicative noise case.
     end
     prob_truesde = SDEProblem(trueSDEfunc, true_noise_func, u0, tspan)
     ensemble_prob = EnsembleProblem(prob_truesde)
@@ -35,3 +35,5 @@ a, b, c = get_sols(10000)
 cc = hcat(c...)'
 ccc = kde(cc).density
 contour(ccc)
+
+savefig("2d_kde_addi_noise.pdf")
