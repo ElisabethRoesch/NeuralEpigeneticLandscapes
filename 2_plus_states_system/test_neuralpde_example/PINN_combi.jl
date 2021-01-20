@@ -70,6 +70,5 @@ Stacktrace:
  [3] include_string(::Function, ::Module, ::String, ::String) at ./loading.jl:1088
 in expression starting at /Users/eroesch/github/NeuralEpigeneticLandscapes/2_plus_states_system/test_neuralpde_example/PINN_combi.jl:45
 
-julia> 
 
 """
