@@ -13,4 +13,4 @@ module load julia/1.5.1-linux-x86_64
 module load web_proxy
 
 # Launch julia code
-julia gpu_server_neural_ODE.jl
+julia neural_PDE_blog_post_test.jl

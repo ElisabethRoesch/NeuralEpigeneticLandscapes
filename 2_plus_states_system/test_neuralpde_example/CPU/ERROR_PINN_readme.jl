@@ -1,4 +1,4 @@
-
+# Error: build_loss_function (line 39)
 using ModelingToolkit, DiffEqFlux, Flux, Plots, Test, Optim, CUDA, NeuralPDE, GalacticOptim
 
 cb = function (p,l)
@@ -29,7 +29,7 @@ dx = 0.1
 # Neural network
 chain = FastChain(FastDense(2,16,Flux.σ),FastDense(16,16,Flux.σ),FastDense(16,1))
 
-strategy = GridTraining()
+strategy = GridTraining(dx)
 discretization = PhysicsInformedNN(dx,chain,strategy=strategy)
 
 indvars = [t,x]

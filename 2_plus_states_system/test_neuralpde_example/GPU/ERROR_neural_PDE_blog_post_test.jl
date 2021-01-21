@@ -1,5 +1,6 @@
+# Fails. param vs params deconstrut error
 using OrdinaryDiffEq, RecursiveArrayTools, LinearAlgebra,
-      DiffEqOperators, Flux, CuArrays
+      DiffEqOperators, Flux, CUDA
 
 # Define the constants for the PDE
 const α₂ = 1.0f0
@@ -55,16 +56,17 @@ prob = ODEProblem(f,vec(u0),(0.0f0,100.0f0))
 @time sol = solve(prob,ROCK2(),progress=true,saveat = 5.0)
 
 
-using Plots; pyplot()
-p1 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,1],title = "[A]")
-p2 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,2],title = "[B]")
-p3 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,3],title = "[C]")
-plot(p1,p2,p3,layout=grid(3,1))
-savefig("neural_pde_training_data.png")
+# comment for GPU
+# using Plots; pyplot()
+# p1 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,1],title = "[A]")
+# p2 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,2],title = "[B]")
+# p3 = surface(X,Y,reshape(sol[end],N,N,3)[:,:,3],title = "[C]")
+# plot(p1,p2,p3,layout=grid(3,1))
+# savefig("neural_pde_training_data.png")
 
 using DiffEqFlux, Flux
 
-u0 = param(u0)
+u0 = params(u0)
 tspan = (0.0f0,100.0f0)
 
 ann = Chain(Dense(3,50,tanh), Dense(50,3)) |> gpu
