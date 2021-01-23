@@ -7,8 +7,6 @@ using Test, NeuralPDE
 using GalacticOptim
 using Optim
 
-# using Quadrature,Cubature, Cuba
-# using QuasiMonteCarlo
 
 using Random
 Random.seed!(100)
@@ -50,5 +48,5 @@ pde_system = PDESystem(eq,bcs,domains,[θ],[u])
 
 prob = NeuralPDE.discretize(pde_system,discretization)
 
-res = GalacticOptim.solve(prob, ADAM(0.1); cb = cb, maxiters=1000)
+res = GalacticOptim.solve(prob, ADAM(0.01); cb = cb, maxiters=1000)
 phi = discretization.phi
