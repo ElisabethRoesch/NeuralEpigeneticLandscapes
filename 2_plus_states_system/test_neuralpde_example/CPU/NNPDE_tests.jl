@@ -232,8 +232,8 @@ chain1 = FastChain(FastDense(2,10,Flux.σ),FastDense(10,1))
 chain2 = FastChain(FastDense(2,10,Flux.σ),FastDense(10,1))
 
 discretization = NeuralPDE.PhysicsInformedNN([chain1,chain2],NeuralPDE.GridTraining([0.1, 0.1]))
-pde_system = PDESystem(eqs,bcs,domains,[x,y],[u1,u2])
-prob = NeuralPDE.discretize(pde_system,discretization)
+pde_system = PDESystem(eqs, bcs, domains, [x,y], [u1,u2])
+prob = NeuralPDE.discretize(pde_system, discretization)
 
 res = GalacticOptim.solve(prob,Optim.BFGS(); cb = cb, maxiters=300)
 phi = discretization.phi
