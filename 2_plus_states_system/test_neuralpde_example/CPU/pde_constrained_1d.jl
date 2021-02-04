@@ -12,8 +12,8 @@ u0 = exp.(-(x.-3.0).^2) # I.C
 ## Problem Parameters
 p        = [1.0,1.0]    # True solution parameters
 xtrs     = [dx,Nx]      # Extra parameters
-dt       = 0.40*dx^2    # CFL condition
-t0, tMax = 0.0 ,1000*dt
+dt       = 1000*dx^2    # CFL condition
+t0, tMax = 0.0 ,4*dt
 tspan    = (t0,tMax)
 t        = t0:dt:tMax;
 
@@ -45,9 +45,12 @@ end
 prob = ODEProblem(burgers,u0,tspan,p)
 sol = solve(prob,Tsit5(), dt=dt,saveat=t);
 
-plot(x, sol.u[1], lw=3, label="t0", size=(800,500))
-plot!(x, sol.u[end],lw=3, ls=:dash, label="tMax")
-
+plot(x, sol.u[1], lw=3, label="Sol t0", size=(800,500))
+plot!(x, sol.u[2],lw=3, ls=:dash, label="Sol t2")
+plot!(x, sol.u[3],lw=3, ls=:dash, label="Sol t3")
+plot!(x, sol.u[4],lw=3, ls=:dash, label="Sol t4")
+plot!(x, sol.u[end],lw=3, ls=:dash, label="Sol tMax")
+sol.u
 ps  = [0.1, 0.2];   # Initial guess for model parameters
 function predict(θ)
     Array(solve(prob,Tsit5(),p=θ,dt=dt,saveat=t))
