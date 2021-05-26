@@ -1,5 +1,6 @@
 # This is a modified copy of ODE_multi_IC_timecourse.jl from 1_state_system folder. Here added: multi alpha
 using DifferentialEquations, Plots, DiffEqFlux, Flux
+using BSON: @load , @save
 #########################
 # Training data:
 # Case 1: Training data is ODE solution without any technical noise.
@@ -45,17 +46,17 @@ for idx_alpha in 1:length(alphas)
     push!(plts, plt)
 end
 plot(plts..., layout = (1, length(alphas)), size = (1000, 300))
-savefig("results/train.pdf")
+savefig("results/results_1_det_case/plots/train.pdf")
 #########################
 # Defining and training deterministic models: One neural ODE per alpha.
 #########################
 col_predict = "#22a880"
 models = []
-function def_and_train_model(ode_data_one_alpha)
-    dudt2 = FastChain(FastDense(1, 50, tanh),
+function def_and_train_model(ode_data_one_alpha, ind_alpha)
+    dudt = FastChain(FastDense(1, 50, tanh),
                       FastDense(50, 50, tanh),
                       FastDense(50, 1))
-    prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
+    prob_neuralode = NeuralODE(dudt, tspan, Tsit5(), saveat = tsteps)
     function loss_neuralode(p)
         loss = 0.
         counter = 0
@@ -87,13 +88,16 @@ function def_and_train_model(ode_data_one_alpha)
     end
     result_neuralode = DiffEqFlux.sciml_train(loss_neuralode, prob_neuralode.p,
                                               ADAM(0.05), cb = callback,
-                                              maxiters = 500)
+                                              maxiters = 100)
+    @save string("results/results_1_det_case/models/dudt_",ind_alpha,".bson") dudt
+    min_res = result_neuralode.minimizer
+    @save string("results/results_1_det_case/models/minimizer_",ind_alpha,".bson") min_res
     return result_neuralode
 end
 function def_and_train_models(ode_data)
     models = []
     for ind_alpha in 1:length(ode_data)
-        push!(models, def_and_train_model(ode_data[ind_alpha]))
+        push!(models, def_and_train_model(ode_data[ind_alpha], ind_alpha))
     end
     return models
 end
@@ -106,10 +110,10 @@ function test_model(model, alpha)
     ode_data_tests = run_pfsuper_multi_u0(test_u0s, alpha)
     preds_tests = []
     for u0 in test_u0s
-        dudt2 = FastChain(FastDense(1, 50, tanh),
+        dudt = FastChain(FastDense(1, 50, tanh),
                           FastDense(50, 50, tanh),
                           FastDense(50, 1))
-        prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
+        prob_neuralode = NeuralODE(dudt, tspan, Tsit5(), saveat = tsteps)
         preds_test = prob_neuralode([u0], model.minimizer)
         push!(preds_tests, preds_test)
     end
@@ -132,4 +136,4 @@ end
 
 test_pts = test_models(models, alphas)
 plot(test_pts..., layout = (1, length(alphas)), size = (1000, 300))
-savefig("results/test.pdf")
+savefig("results/results_1_det_case/plots/test.pdf")
