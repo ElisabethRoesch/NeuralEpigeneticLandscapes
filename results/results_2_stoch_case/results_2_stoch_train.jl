@@ -65,7 +65,7 @@ function loss_neuralsde(p; n = 100)
         vars = reshape(var.([[samples[i][j] for i in 1:length(samples)]
                                               for j in 1:length(samples[1])]),
                               size(samples[1])...)
-        s = sum(abs2, sde_datae[counter] - means) + sum(abs2, sde_datae_vars[counter] - vars)
+        s = sum(abs2, sde_datae[counter] - means) #+ sum(abs2, sde_datae_vars[counter] - vars)
         loss = loss + s
     end
     return loss,  means_first, vars_first
@@ -73,7 +73,7 @@ end
 
 iter = 0
 
-callback = function (p, loss, means, vars; doplot = true)
+callback = function (p, loss, means, vars; doplot = false)
     global list_plots, iter
 
     if iter == 0
@@ -93,24 +93,32 @@ callback = function (p, loss, means, vars; doplot = true)
 end
 
 
-opt = ADAM(0.025)
+opt = ADAM(0.05)
 
 result = DiffEqFlux.sciml_train((p) -> loss_neuralsde(p, n = 2),
                                  neuralsde.p, opt,
                                  cb = callback, maxiters = 100)
 
+min_res = result.minimizer
+using BSON
+ind_alpha=1
+BSON.@save string("results/results_2_stoch_case/models/minimizer_",ind_alpha,".bson") min_res
 
+function plot_sdes(p = min_res, n = 10)
+    drift_dudt_re = FastChain(FastDense(1, 50, tanh),
+                           FastDense(50, 50, tanh),
+                           FastDense(50, 1))
+    diffusion_dudt_re = FastChain(FastDense(1, 1))
 
-
-function plot_sdes(p = neuralsde.p, n = 100)
+    neuralsde _re = NeuralDSDE(drift_dudt_re, diffusion_dudt_re, tspan, SOSRI(), saveat = tsteps, reltol = 1e-1, abstol = 1e-1)
     plt = plot()
     for i in 1:length(u0s)
          u0 = u0s[i]
         scatter!(tsteps, sde_datae[i][1,:], yerror = sde_datae_vars[i][1,:], label = "data", color = "blue")
-        samples_temp = [Array(neuralsde([u0], p)) for i in 1:n]
+        samples_temp = [Array(neuralsde([u0], min_res)) for i in 1:n]
         means_temp = reshape(mean.([[samples_temp[i][j] for i in 1:length(samples_temp)] for j in 1:length(samples_temp[1])]), size(samples_temp[1])...)
         vars_temp = reshape(var.([[samples_temp[i][j] for i in 1:length(samples_temp)] for j in 1:length(samples_temp[1])]), size(samples_temp[1])...)
-        plot!(plt, tsteps, means_temp[1,:], ribbon = vars_temp[1,:], label = "prediction", color = "red")
+        plot!(plt, tsteps, means_temp[1,:], label = "prediction", color = "red")
     end
     return plt
 end
